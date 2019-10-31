@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.fh.shop.mapper.user.IUserMapper">
+    <sql id="searchSql">
+        <where>
+            <if test="userName != null and userName != ''  ">
+                userName like concat('%',#{userName},'%')
+            </if>
+            <if test="realName != null and realName != '' ">
+                and realName like concat('%',#{realName},'%')
+            </if>
+            <if test="minAge != null and minAge > 0">
+                and age >= #{minAge}
+            </if>
+            <if test="maxAge != null and maxAge >= minAge ">
+                and age &lt;= #{maxAge}
+            </if>
+            <if test="minSalary != null and minSalary > 0">
+                and salary >= #{minSalary}
+            </if>
+            <if test="maxSalary != null and maxSalary >=minSalary ">
+                and salary &lt;= #{maxSalary}l
+            </if>
+            <if test="minEntryTime != null">
+                and entryTime >= #{minEntryTime}
+            </if>
+            <if test="maxEntryTime != null and maxEntryTime >= minEntryTime">
+                and entryTime &lt;= #{maxEntryTime}
+            </if>
+            <if test="roleIdsSize > 0">
+                and id in
+                (select userId from t_user_role where roleId in
+                <foreach collection="roleIds" item="idsList"  open="("  close=")"  separator="," >
+                   #{idsList}
+            </foreach>
+                group by userId having count(*) =#{roleIdsSize} )
+            </if>
+
+        </where>
+    </sql>
+   <insert id="addUser" parameterType="com.fh.shop.po.user.User">
+       <selectKey  keyProperty="id" resultType="long" order="AFTER">
+           select last_insert_id();
+       </selectKey>
+       insert into t_user (userName,realName,password,age,sex,phone,emall,salary,entryTime) values
+                  (#{userName},#{realName},#{password},#{age},#{sex},#{phone},#{emall},#{salary},#{entryTime})
+   </insert>
+
+    <insert id="addUserRole" parameterType="com.fh.shop.po.user.UserRole">
+           insert into t_user_role (userId,roleId) values(#{userId},#{roleId})
+    </insert>
+
+    <select id="queryUserCount" parameterType="com.fh.shop.param.searchUser.UserSearch" resultType="long" >
+        select  count(*)  from t_user <include refid="searchSql"></include>
+    </select>
+    <select id="queryUserList" parameterType="com.fh.shop.param.searchUser.UserSearch"  resultType="com.fh.shop.po.user.User">
+       select  t.*  from
+            ( select  *  from t_user
+               <include refid="searchSql"></include>
+                 order by  id desc )t
+                limit #{start},#{length}
+    </select>
+    <select id="queryUserRole" parameterType="long" resultType="com.fh.shop.po.role.Role">
+        select r.roleName,r.Id
+                from t_user_role ur left join
+                      t_role r  on ur.roleId=r.id where ur.userId=#{userId}
+    </select>
+    <delete id="deleteUserRoleByUserId" parameterType="long">
+        delete from t_user_role where userId=#{userId}
+    </delete>
+    <delete id="deleteUserRoleBatch">
+         delete from t_user_role where userId in 
+         <foreach collection="list"  item="list" separator="," open="(" close=")">
+               #{list}
+         </foreach>
+    </delete>
+
+    <delete id="deleteUserById" parameterType="java.lang.Long">
+        delete from t_user where id=#{id}
+    </delete>
+
+    <select id="queryUserById" parameterType="long" resultType="com.fh.shop.po.user.User">
+        select id,userName,realName,age,sex,phone,emall,salary,entryTime,errorCount,password from t_user  where id=#{id}
+    </select>
+    <update id="updateUser" parameterType="com.fh.shop.po.user.User">
+        update t_user set
+        userName=#{userName},realName=#{realName},password=#{password},age=#{age},sex=#{sex},
+        phone=#{phone},emall=#{emall},salary=#{salary},entryTime=#{entryTime}
+         where id=#{id}
+    </update>
+
+    <delete id="deleteUserBatch">
+        delete from t_user where id in
+        <foreach collection="list" item="userIds" separator="," open="(" close=")">
+            #{userIds}
+        </foreach>
+    </delete>
+
+    <select id="queryUserByUserName" parameterType="string" resultType="com.fh.shop.po.user.User">
+        select   *  from  t_user where userName=#{username}
+    </select>
+    <insert id="updateUserOperation" parameterType="com.fh.shop.po.user.User">
+         update t_user set  lasttime=#{lasttime},loginCount=#{loginCount},logintime=#{logintime},errorcount=#{errorCount},
+               isLock=#{isLock},lockDate=#{lockDate}
+          where id=#{id}
+    </insert>
+    <select id="queryUserByFile"  parameterType="com.fh.shop.po.user.User" resultType="com.fh.shop.po.user.User">
+        select id,userName,realName,age,sex from t_user
+    </select>
+
+    <select id="queryUserResourceByUserId" parameterType="long" resultType="com.fh.shop.po.resource.Resource">
+         select r.* from t_resource r left join t_role_resource rr on r.id=rr.resourceid
+             left join t_user_role ur on rr.roleId=ur.roleId where ur.userid=#{userId} and r.resourceType=0
+    </select>
+    <select id="queryUserMenuByUserId" parameterType="long" resultType="com.fh.shop.po.resource.Resource">
+        select r.* from t_resource r left join t_role_resource rr on r.id=rr.resourceid
+             left join t_user_role ur on rr.roleId=ur.roleId where ur.userid=#{userId}
+    </select>
+    <select id="queryInterceptorsResourceList"  resultType="com.fh.shop.po.resource.Resource">
+        select * from t_resource
+    </select>
+
+
+    <update id="updateUserLockDate" >
+        update t_user set lockDate=#{date},errorCount=1 where id=#{id}
+    </update>
+    <update id="updateUserErrorJJ" >
+          update t_user set lockDate=#{date},errorCount=errorCount+1 where id=#{id}
+    </update>
+    <update id="updateUserErrorCount" parameterType="long">
+        update t_user set errorCount=0 where id=#{v}
+    </update>
+    <update id="updateUserIsLock">
+             update t_user set errorCount=#{errorCount} where id=#{id}
+    </update>
+    <update id="UpdatePassword">
+        update  t_user set password=#{young} where id=#{id}
+    </update>
+    <update id="resetPassword">
+        update  t_user set password=#{password} where id=#{v}
+    </update>
+    <select id="byTextContentFindUser" parameterType="string" resultType="com.fh.shop.po.user.User">
+        select id,password,emall,userName,realName,phone from t_user where emall=#{emall}
+    </select>
+
+</mapper>

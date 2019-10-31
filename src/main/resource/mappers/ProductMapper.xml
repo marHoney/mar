@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.fh.shop.mapper.product.IProductMapper">
+    <sql id="searchSql">
+        <where>
+            <if test="productName != null and productName != ''">
+                productName like concat('%',#{productName},'%')
+            </if>
+            <if test="minPrice != null and minPrice >0">
+                and price >=#{minPrice}
+            </if>
+            <if test="maxPrice != null and maxPrice>=minPrice">
+                and price &lt; #{maxPrice}
+            </if>
+            <if test="minProductDate != null">
+                and productDate >=#{minProductDate}
+            </if>
+            <if test="maxProductDate != null and maxProductDate>=minProductDate">
+                and productDate &lt; #{maxProductDate}
+            </if>
+        </where>
+    </sql>
+    <select id="queryProductCount" parameterType="com.fh.shop.param.searchProduct.ProductSearch" resultType="long" >
+       select count(*) from t_product <include refid="searchSql"></include>
+    </select>
+    <select id="queryProductList" parameterType="com.fh.shop.param.searchProduct.ProductSearch" resultType="com.fh.shop.po.product.Product">
+      select t.* from
+          (select * from t_product <include refid="searchSql"></include>
+            order by id desc  )t
+      limit #{start},#{length}
+    </select>
+    <insert id="addProduct" parameterType="com.fh.shop.po.product.Product">
+        insert into t_product (productName,price,productPhoto,productDate,productCount,isHot,isUp)
+              values(#{productName},#{price},#{productPhoto},#{productDate},#{productCount},#{isHot},#{isUp})
+    </insert>
+    <delete id="deleteProduct" parameterType="long">
+        delete from t_product where id=#{id}
+    </delete>
+    <update id="updateProduct" parameterType="com.fh.shop.po.product.Product">
+        update t_product set
+            productName=#{productName},price=#{price},productPhoto=#{productPhoto},productDate=#{productDate}
+        where id=#{id}
+    </update>
+    <update id="updateProductIsUp" >
+        update t_product set isUp=#{isUp} where id=#{id}
+    </update>
+
+</mapper>

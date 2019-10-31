@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.fh.shop.mapper.brand.IBrandMapper">
+    <select id="queryBrandCount" parameterType="com.fh.shop.param.searchBrand.BrandSearch" resultType="long">
+        select count(*) from t_brand  where 1=1
+        <if test="brandName != null and brandName != ''">
+           and   brandName like concat('%',#{brandName},'%')
+        </if>
+    </select>
+     <select id="queryBrandList" parameterType="com.fh.shop.param.searchBrand.BrandSearch" resultType="com.fh.shop.po.brand.Brand">
+       select t.* from
+        ( select id,brandName,brandPhoto from t_brand where 1=1
+             <if test="brandName != null and brandName != ''">
+                  and   brandName like concat('%',#{brandName},'%')
+             </if>
+         order by id desc )t
+      limit #{start},#{length}
+     </select>
+    <insert id="addProduct" parameterType="com.fh.shop.po.brand.Brand">
+        insert into  t_brand (brandName,brandPhoto) values(#{brandName},#{brandPhoto})
+    </insert>
+    <delete id="deleteBrand" parameterType="long">
+        delete from t_brand where id=#{id}
+    </delete>
+    <update id="updateBrand" parameterType="com.fh.shop.po.brand.Brand">
+        update t_brand
+            set brandName=#{brandName},brandPhoto=#{brandPhoto}
+        where id=#{id}
+    </update>
+</mapper>

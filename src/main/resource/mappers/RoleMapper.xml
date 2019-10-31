@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.fh.shop.mapper.role.IRoleMapper">
+    <select id="queryRoleCount" parameterType="com.fh.shop.param.searchRole.RoleSearch" resultType="long">
+        select count(*) from t_role where 1=1
+        <if test="roleName != null and roleName != ''">
+          and   roleName like "%"#{roleName}"%"
+        </if>
+    </select>
+    <select id="queryRoleList" parameterType="com.fh.shop.param.searchRole.RoleSearch"  resultType="com.fh.shop.po.role.Role" >
+        select t.* from
+            ( select id,roleName from t_role  where 1=1
+             <if test="roleName != null and roleName != ''">
+               and  roleName like "%"#{roleName}"%"
+             </if>
+             order by  id desc )t
+           limit #{start},#{length}
+    </select>
+    <insert id="addRole" parameterType="com.fh.shop.po.role.Role">
+         <selectKey keyProperty="id" resultType="long" order="AFTER">
+             select last_insert_id();
+         </selectKey>
+        insert into  t_role (roleName) values(#{roleName})
+    </insert>
+    <insert id="addResourceIdArr" parameterType="com.fh.shop.po.role.RoleResource">
+        insert into t_role_resource (roleId,resourceId) values
+        <foreach collection="list" item="resourceArr" separator="," >
+               (#{resourceArr.roleId},#{resourceArr.resourceId})
+        </foreach>
+    </insert>
+    <delete id="deleteRoleResourceId"  parameterType="com.fh.shop.po.role.Role">
+        delete from t_role_resource where roleId=#{roleId};
+    </delete>
+    <delete id="deleteRole" parameterType="long">
+        delete from t_role where id=#{id}
+    </delete>
+    <update id="updateUser" parameterType="com.fh.shop.po.role.Role">
+        update t_role set roleName =#{roleName} where id=#{id}
+    </update>
+    <select id="queryUserCheckbox" resultType="com.fh.shop.po.role.Role">
+        select id,roleName from t_role
+    </select>
+    <select id="queryResourceIdByRoleId" parameterType="long" resultType="long">
+         select resourceId from t_role_resource where roleId = #{roleId}
+    </select>
+    <delete id="deleteUserRole" parameterType="long">
+        delete from t_user_role where roleId=#{roleId}
+    </delete>
+</mapper>

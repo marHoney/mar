@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC  
+    "-//mybatis.org//DTD Mapper 3.0//EN"  
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.fh.shop.mapper.logInfo.ILogInfoMapper">
+    <sql id="log">
+        <where>
+            <if test="userName != null and userName != ''">
+                userName like  concat('%',#{userName},'%')
+            </if>
+            <if test="realName != null and realName != ''">
+                and realName like concat('%',#{realName},'%')
+            </if>
+            <if test="minCurrDate != null  ">
+                and CurrDate >= #{minCurrDate}
+            </if>
+            <if test="maxCurrDate != null and maxCurrDate >= minCurrDate ">
+                and CurrDate &lt;= #{maxCurrDate}
+            </if>
+            <if test="info != null and info != ''">
+                and info like concat('%',#{info},'%')
+            </if>
+            <if test="status > 0">
+                 and status=#{status}
+            </if>
+        </where>
+    </sql>
+
+    <select id="queryLogInfoCount" parameterType="com.fh.shop.param.searchLogInfo.LogInfoSearch" resultType="long">
+        select count(*) from t_log  <include refid="log"></include>
+    </select>
+    <select id="queryLogInfoList" parameterType="com.fh.shop.param.searchLogInfo.LogInfoSearch" resultType="com.fh.shop.po.logInfo.LogInfo">
+        select t.* from
+             (select id,userName,realName,currDate,info,status,errorMsg,detail,content from t_log   <include refid="log"></include>   order  by  id desc )t
+        limit #{start},#{length}
+    </select>
+
+    <insert id="addLogInfo" parameterType="com.fh.shop.po.logInfo.LogInfo">
+     insert into t_log (userName,realName,currDate,info,status,errorMsg,detail,content)
+               values (#{userName},#{realName},#{currDate},#{info},#{status},#{errorMsg},#{detail},#{content})
+    </insert>
+    <delete id="deleteLogInfo" parameterType="long">
+        delete from t_log where id=#{v}
+    </delete>
+</mapper>
